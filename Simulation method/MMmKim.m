@@ -3,7 +3,6 @@ clc, close, clear
 
 %% Задание значений начальных параметров СМО
 DialogM = inputdlg({'Средняя интенсивность потока поступления заявок (Lambda)' 'Средняя интенсивность потока обслуживания заявок (Mu)' 'Максимальная длина очереди (m)' 'Допустимое число требований в системе (K)' 'Время моделирования СМО' 'Число повторов имитации'}, 'Введите начальные параметры системы', [1; 1; 1; 1; 1; 1], {'1.254' '0.756' '3' '5' '20' '50'});
-DialogT = inputdlg({'От T1' 'До T2'}, 'Интервал времени обслуживания приборов [T1 - T2]', [1 85; 1 85], {'5', '10'});
 
 L = str2double(DialogM{1}); % Интенсивность поступления заявок
 M = str2double(DialogM{2}); % Интенсивнось обслуживания заявок
@@ -11,9 +10,6 @@ m = str2double(DialogM{3}); % Максимальная очередь заявок
 K = str2double(DialogM{4}); % Параметр К
 Tm = str2double(DialogM{5}); % Время имитационного моделирования СМО
 N = str2double(DialogM{6}); % Число повторов моделирования
-
-T1 = str2double(DialogT{1}); % Интервалы времени обслуживания
-T2 = str2double(DialogT{2});
 
 %% 
 CreqAve = 0; % Счетчик поступивших заявок
@@ -76,7 +72,7 @@ Crejected = 0; % Счетчик отклоненных заявок
             % Проверка наличия свободных приборов
             if flag
                 busyFlag = true;
-                tserv = 1/M*log(randi([T1,T2]));
+                tserv = -1/M*log(rand);
                 for ds = 1 : length(Dstatus)
                     if Dstatus(ds) == 0
                         Dstatus(ds) = tcur + tserv;
@@ -98,7 +94,7 @@ Crejected = 0; % Счетчик отклоненных заявок
             else
                 if Queues > 0 && not(busyFlag) % если есть очередь
                     for qu = 1 : Queues
-                        tserv = 1/M*log(randi([T1,T2]));
+                        tserv = -1/M*log(rand);
                         for ds = 1 : length(Dstatus)
                             if Dstatus(ds) == 0
                                 Dstatus(ds) = tcur + tserv;
