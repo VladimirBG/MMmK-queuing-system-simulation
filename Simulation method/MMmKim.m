@@ -12,27 +12,27 @@ Tm = str2double(DialogM{5}); % Время имитационного моделирования СМО
 N = str2double(DialogM{6}); % Число повторов моделирования
 
 %% 
-CreqAve = 0; % Счетчик поступивших заявок
-CservAve = 0; % Счетчик обслуженных заявок
-CrejectedAve = 0; % Счетчик отклоненных заявок
+CreqAve = 0; % Счетчик среднего числа поступивших заявок
+CservAve = 0; % Счетчик среднего числа обслуженных заявок
+CrejectedAve = 0; % Счетчик среднего числа отклоненных заявок
+QueueAve = 0; % Счетчик среднего числа заявок в очереди на момент окончания моделирования
+DsAve = 0; % Счетчик среднего числа заявок, находящиеся в процессе обслуживания, на момент окончания моделирования
 
-%% 
-tcur = 0; % Текущее время работы системы
-tcurCorrected = 0; % Корректированое текущее время
-Dstatus = zeros(1, K-m); % Статус прибора (0-свободен, !0 - занят)
-Queues = 0; % Число заявок в очереди
-treq = 0; % Контейнер с моментами поступления заявок
-tserv = 0; % Время обслуживания заявки
+for Nt = 1 : N % Число повторов моделирования
+        %% 
+    tcur = 0; % Текущее время работы системы
+    tcurCorrected = 0; % Корректированое текущее время
+    Dstatus = zeros(1, K-m); % Статус прибора (0-свободен, !0 - занят)
+    Queue = 0; % Число заявок в очереди
+    treq = 0; % Контейнер с моментами поступления заявок
+    tserv = 0; % Время обслуживания заявки
 
-Creq = 0; % Счетчик поступивших заявок
-Cserv = 0; % Счетчик обслуженных заявок
-Crejected = 0; % Счетчик отклоненных заявок
-
-
-
+    Creq = 0; % Счетчик поступивших заявок
+    Cserv = 0; % Счетчик обслуженных заявок
+    Crejected = 0; % Счетчик отклоненных заявок
+    
     %%  Генерация матрицы моментов поступления заявок
-    seed = 654;
-    rng(seed);
+    rng('shuffle');
     ttemp = 0;
     while (treq(end) <= Tm)
         Creq = Creq + 1;
@@ -85,20 +85,20 @@ Crejected = 0; % Счетчик отклоненных заявок
             end
 
             if busyFlag  % Если все прибоы заняты, то инкрементируется счетчик очереди
-                Queues = Queues + 1;
+                Queue = Queue + 1;
             end
 
-            if busyFlag && Queues > m %Если превысило очередь
+            if busyFlag && Queue > m %Если превысило очередь
                 Crejected = Crejected + 1;
-                Queues = Queues - 1;
+                Queue = Queue - 1;
             else
-                if Queues > 0 && not(busyFlag) % если есть очередь
-                    for qu = 1 : Queues
+                if Queue > 0 && not(busyFlag) % если есть очередь
+                    for qu = 1 : Queue
                         tserv = -1/M*log(rand);
                         for ds = 1 : length(Dstatus)
                             if Dstatus(ds) == 0
                                 Dstatus(ds) = tcur + tserv;
-                                Queues = Queues - 1;
+                                Queue = Queue - 1;
                                 break;
                             end
                         end 
@@ -107,9 +107,18 @@ Crejected = 0; % Счетчик отклоненных заявок
             end 
         end
     end
+    
+    CreqAve = CreqAve + Creq; 
+    CservAve = CservAve + Cserv; 
+    CrejectedAve = CrejectedAve + Crejected;
+    QueueAve = QueueAve + Queue;
+    DsAve = DsAve + length(Dstatus);
+end
+fprintf(' Система моделировалась N = %i раз\n', N);
+fprintf('\n\t СРЕДНИЕ ЗНАЧЕНИЯ РЕЗУЛЬТАТОВ МОДЕЛИРОВАНИЙ:\n');
+fprintf(' Поступило заявок Creq = %f\n', CreqAve/(N-1));
+fprintf(' Обслужено заявок Cserv = %f\n', CservAve/N);
+fprintf(' Заявок отклонено Creq = %f\n', CrejectedAve/N);
+fprintf(' Заявок в очереди на момент окончания моделирования QueueAve = %f\n', QueueAve/N);
+fprintf(' Заявок, в процессе обслуживания, на момент окончания моделирования DsAve = %f\n', DsAve/N);
 
-display(Cserv);
-display(Crejected);
-display(Creq);
-display(Dstatus);
-display(Queues);
