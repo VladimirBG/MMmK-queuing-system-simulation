@@ -30,7 +30,7 @@ end
 
 %% Численное интегрирование дифф. уравнений
 P0 = [1;zeros(length(Pij)-1,1)];
-T = [0,20];
+T = [0,100];
 [t,P] = ode23(@cmo, T, P0);
  
 %% Построение диаграммы вероятностей состояний
@@ -62,8 +62,7 @@ Pf = vpa(mldivide(A, fa), 7);
 for J = 1 : length(Pf)
     fprintf('\tPf%d = %f\n', J-1, Pf(J));
 end
-
-
+display(P);
 fprintf('\n\t ОПЕРАЦИОННЫЕ ХАРАКТЕРИСТИКИ:\n');
 Pnot = P(end,end);
 fprintf(' Вероятность отказа Pnot = %f\n', P(end,end));
@@ -75,9 +74,10 @@ Pq = sum(P(end, m+1:end));
 fprintf(' Вероятность наличия очереди Pq = %f\n', Pq);
 Ps = sum(P(end, m:end));
 fprintf(' Вероятность загрузки всех каналов обслуживания Ps = %f\n', Ps);
+ 
 Ns = [0:length(Pij)-1]*P(end,:)';
 fprintf(' Среднее количество требований в системе Ns = %f\n', Ns);
-fprintf(' Среднее время пребывания требования в системе Ts = %f\n', Ns/L);
+
 
 function f = cmo(t,P);
 %% Функция описания правых частей 
