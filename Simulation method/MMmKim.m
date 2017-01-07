@@ -2,7 +2,7 @@ function MMmKim
 clc, close, clear
 
 %% Задание значений начальных параметров СМО
-DialogM = inputdlg({'Средняя интенсивность потока поступления заявок (Lambda)' 'Средняя интенсивность потока обслуживания заявок (Mu)' 'Максимальная длина очереди (m)' 'Допустимое число требований в системе (K)' 'Время моделирования СМО' 'Число повторов имитации'}, 'Введите начальные параметры системы', [1; 1; 1; 1; 1; 1], {'1.254' '0.756' '2' '4' '20' '50'});
+DialogM = inputdlg({'Средняя интенсивность потока поступления заявок (Lambda)' 'Средняя интенсивность потока обслуживания заявок (Mu)' 'Максимальная длина очереди (m)' 'Допустимое число требований в системе (K)' 'Время моделирования СМО' 'Число повторов имитации'}, 'Введите начальные параметры системы', [1; 1; 1; 1; 1; 1], {'3.52' '0.678' '4' '7' '100' '50'});
 
 L = str2double(DialogM{1}); % Интенсивность поступления заявок
 M = str2double(DialogM{2}); % Интенсивнось обслуживания заявок
@@ -37,7 +37,6 @@ for Nt = 1 : N % Число повторов моделирования
     Crejected = 0; % Счетчик отклоненных заявок
     
     %%  Генерация матрицы моментов поступления заявок
-    rng('shuffle');
     ttemp = 0;
     while (treq(end) <= Tm)
         Creq = Creq + 1;
@@ -51,6 +50,29 @@ for Nt = 1 : N % Число повторов моделирования
     for i = 1 : length(treq)
 
         while tcur < treq(i)
+             
+            % Счетчики наличия очереди и занятости приборов обслуживания
+            flDstatus = true; % флаг все приборы свободны
+            flDstatusBAll = true; % Флаг занятости всех приборов 
+            for Ji = 1 : length(Dstatus)
+                if Dstatus(Ji) > 0
+                    PdsBusy(Ji) = PdsBusy(Ji) + 1;
+                    flDstatus = flDstatus && false;
+                    flDstatusBAll = flDstatusBAll && true;
+                else
+                    flDstatusBAll = flDstatusBAll && false;
+                end
+            end
+            if flDstatus
+                PdsBusy(K - m + 1) = PdsBusy(K - m + 1) + 1;
+            elseif flDstatusBAll
+                PdsBusy(K - m + 2) = PdsBusy(K - m + 2) + 1;
+            else
+                PdsBusyNotAll = PdsBusyNotAll + 1;
+            end
+            QsCount(Queue + 1) = QsCount(Queue + 1) + 1;
+      
+            
             tcurCorrected = Dstatus(1);  % Ближайшее время
             for ds = 1 : length(Dstatus)
                  if not(Dstatus(ds) == 0) && Dstatus(ds) < tcurCorrected
@@ -109,29 +131,8 @@ for Nt = 1 : N % Число повторов моделирования
                     end
                 end
             end
-            
-            % Счетчики наличия очереди и занятости приборов обслуживания
-            flDstatus = true; % флаг все приборы свободны
-            flDstatusBAll = true; % Флаг занятости всех приборов 
-            for Ji = 1 : length(Dstatus)
-                if Dstatus(Ji) > 0
-                    PdsBusy(Ji) = PdsBusy(Ji) + 1;
-                    flDstatus = flDstatus && false;
-                    flDstatusBAll = flDstatusBAll && true;
-                else
-                    flDstatusBAll = flDstatusBAll && false;
-                end
-            end
-            if flDstatus
-                PdsBusy(K - m + 1) = PdsBusy(K - m + 1) + 1;
-            elseif flDstatusBAll
-                PdsBusy(K - m + 2) = PdsBusy(K - m + 2) + 1;
-            else
-                PdsBusyNotAll = PdsBusyNotAll + 1;
-            end
-            QsCount(Queue + 1) = QsCount(Queue + 1) + 1;
         end
-    end
+    end 
     
     CreqAve = CreqAve + Creq; 
     CservAve = CservAve + Cserv; 
@@ -150,14 +151,14 @@ PdsBusy = PdsBusy ./ N;
 PdsBusyNotAll = PdsBusyNotAll / N;
     
 fprintf(' Система моделировалась N = %i раз\n', N);
-fprintf('\n\t СРЕДНИЕ ЗНАЧЕНИЯ РЕЗУЛЬТАТОВ МОДЕЛИРОВАНИЙ:\n');
+fprintf('\n\t СРЕДНИЕ ЗНАЧЕНИЯ РЕЗУЛЬТАТОВ МОДЕЛИРОВАНИЯ СМО M/M/%i/%i:\n', m, K);
 fprintf(' Поступило заявок Creq = %f\n', CreqAve);
 fprintf(' Обслужено заявок Cserv = %f\n', CservAve);
 fprintf(' Заявок отклонено Creq = %f\n', CrejectedAve);
 fprintf(' Заявок в очереди на момент окончания моделирования QueueAve = %f\n', QueueAve);
 fprintf(' Заявок, в процессе обслуживания, на момент окончания моделирования DsAve = %f\n', DsAve);
 
-Pnot = CrejectedAve / (Creq);
+Pnot = CrejectedAve / (CrejectedAve + CservAve);
 fprintf(' Вероятность отказа Pnot = %f\n', Pnot);
 Q = 1 - Pnot;
 fprintf(' Относительная пропускная способность Q = %f\n', Q);
@@ -173,6 +174,39 @@ Ps = PdsBusy(K-m+2) / (PdsBusyNotAll + PdsBusy(K-m+2) + PdsBusy(K-m+1));
 fprintf(' Вероятность загрузки всех каналов обслуживания Ps = %f\n', Ps);
 Ns = (Creq)/Tm;
 fprintf(' Среднее количество требований в системе Ns = %f\n', Ns);
+for Ji = 1 : K-m
+  PpB = PdsBusy(Ji) / (PdsBusyNotAll + PdsBusy(K-m+2) + PdsBusy(K-m+1)); 
+  fprintf(' Загрузка %i прибора: %f\n', Ji, PpB);  
+end
 
+%% Расчет доверительных интервалов
+fprintf('\n\t Доверительные интервалы:\n');
 
+PnotC = vpa(CInterval95(Pnot,N));
+fprintf(' Вероятность отказа Pnot:\n   От %f\n   До %f\n', PnotC);
+QC = vpa(CInterval95(Q,N));
+fprintf(' Относительная пропускная способность Q:\n   От %f\n   До %f\n', 1-PnotC);
+AbC = vpa(CInterval95(Ab,N));
+fprintf(' Абсолютная пропускная способность A:\n   От %f\n   До %f\n', QC*L);
+PqC = vpa(CInterval95(Pq,N));
+fprintf(' Вероятность наличия очереди Pq:\n   От %f\n   До %f\n', PqC);
+PsC = vpa(CInterval95(Ps,N));
+fprintf(' Вероятность загрузки всех каналов обслуживания Ps:\n   От %f\n   До %f\n', PsC);
+NsC = vpa(CInterval95(Ns,N));
+fprintf(' Среднее количество требований в системе Ns:\n   От %f\n   До %f\n', NsC);
+for Ji = 1 : K-m
+  PpB = PdsBusy(Ji) / (PdsBusyNotAll + PdsBusy(K-m+2) + PdsBusy(K-m+1));
+  PpBC = vpa(CInterval95(PpB,N));
+  for I = 1 : length(PpBC)
+      if PpBC(I) > 1
+          PpBC(I) = 1;
+      end
+  end
+  fprintf(' Загрузка %i прибора::\n   От %f\n   До %f\n', Ji, PpBC);  
+end
 
+function f = CInterval95(xc,Ni)
+%% Функция расчета доверительных интервалов с p = 0.95
+syms tot;
+E = {(xc - tot)^2 - 1.96^2*tot/Ni == 0};
+f = solve(E{:});
