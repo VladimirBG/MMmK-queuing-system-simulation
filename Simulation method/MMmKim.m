@@ -2,7 +2,7 @@ function MMmKim
 clc, close, clear
 
 %% Задание значений начальных параметров СМО
-DialogM = inputdlg({'Средняя интенсивность потока поступления заявок (Lambda)' 'Средняя интенсивность потока обслуживания заявок (Mu)' 'Максимальная длина очереди (m)' 'Допустимое число требований в системе (K)' 'Время моделирования СМО' 'Число повторов имитации'}, 'Введите начальные параметры системы', [1; 1; 1; 1; 1; 1], {'3.52' '0.678' '4' '7' '100' '50'});
+DialogM = inputdlg({'Средняя интенсивность потока поступления заявок (Lambda)' 'Средняя интенсивность потока обслуживания заявок (Mu)' 'Максимальная длина очереди (m)' 'Допустимое число требований в системе (K)' 'Время моделирования СМО' 'Число повторов имитации'}, 'Введите начальные параметры системы', [1; 1; 1; 1; 1; 1], {'4' '1' '2' '5' '30' '500'});
 
 L = str2double(DialogM{1}); % Интенсивность поступления заявок
 M = str2double(DialogM{2}); % Интенсивнось обслуживания заявок
@@ -157,7 +157,7 @@ fprintf(' Заявок в очереди на момент окончания моделирования QueueAve = %f\n', Q
 fprintf(' Заявок, в процессе обслуживания, на момент окончания моделирования DsAve = %f\n', DsAve);
 
 Pnot = CrejectedAve / (CrejectedAve + CservAve);
-fprintf(' Вероятность отказа Pnot = %f\n', Pnot);
+fprintf(' Оценка вероятности отказа Pnot = %f\n', Pnot);
 Q = 1 - Pnot;
 fprintf(' Относительная пропускная способность Q = %f\n', Q);
 Ab = L*Q;
@@ -167,31 +167,27 @@ for Ji = 2 : length(QsCount)
    QsC = QsC + QsCount(Ji); 
 end
 Pq = QsC / (QsC + QsCount(1));
-fprintf(' Вероятность наличия очереди Pq = %f\n', Pq);
+fprintf(' Оценка вероятности наличия очереди Pq = %f\n', Pq);
 Ps = PdsBusy(K-m+2) / (PdsBusyNotAll + PdsBusy(K-m+2) + PdsBusy(K-m+1));
-fprintf(' Вероятность загрузки всех каналов обслуживания Ps = %f\n', Ps);
-Ns = (Creq)/Tm;
-fprintf(' Среднее количество требований в системе Ns = %f\n', Ns);
+fprintf(' Оценка вероятности загрузки всех каналов обслуживания Ps = %f\n', Ps);
 for Ji = 1 : K-m
   PpB = PdsBusy(Ji) / (PdsBusyNotAll + PdsBusy(K-m+2) + PdsBusy(K-m+1)); 
-  fprintf(' Загрузка %i прибора: %f\n', Ji, PpB);  
+  fprintf(' Загрузка %i-го прибора: %f\n', Ji, PpB);  
 end
 
 %% Расчет доверительных интервалов
 fprintf('\n\t Доверительные интервалы:\n');
 
 PnotC = vpa(CInterval95(Pnot,N));
-fprintf(' Вероятность отказа Pnot:\n   От %f\n   До %f\n', PnotC);
+fprintf(' Оценка вероятности отказа в обслуживании Pnot:\n   От %f\n   До %f\n', PnotC);
 QC = vpa(CInterval95(Q,N));
-fprintf(' Относительная пропускная способность Q:\n   От %f\n   До %f\n', 1-PnotC);
+fprintf(' Относительная пропускная способность Q:\n   От %f\n   До %f\n', QC);
 AbC = vpa(CInterval95(Ab,N));
-fprintf(' Абсолютная пропускная способность A:\n   От %f\n   До %f\n', QC*L);
+fprintf(' Абсолютная пропускная способность A:\n   От %f\n   До %f\n', AbC);
 PqC = vpa(CInterval95(Pq,N));
-fprintf(' Вероятность наличия очереди Pq:\n   От %f\n   До %f\n', PqC);
+fprintf(' Оценка вероятности наличия очереди Pq:\n   От %f\n   До %f\n', PqC);
 PsC = vpa(CInterval95(Ps,N));
-fprintf(' Вероятность загрузки всех каналов обслуживания Ps:\n   От %f\n   До %f\n', PsC);
-NsC = vpa(CInterval95(Ns,N));
-fprintf(' Среднее количество требований в системе Ns:\n   От %f\n   До %f\n', NsC);
+fprintf(' Оценка вероятности загрузки всех каналов обслуживания Ps:\n   От %f\n   До %f\n', PsC);
 for Ji = 1 : K-m
   PpB = PdsBusy(Ji) / (PdsBusyNotAll + PdsBusy(K-m+2) + PdsBusy(K-m+1));
   PpBC = vpa(CInterval95(PpB,N));
@@ -200,7 +196,7 @@ for Ji = 1 : K-m
           PpBC(I) = 1;
       end
   end
-  fprintf(' Загрузка %i прибора::\n   От %f\n   До %f\n', Ji, PpBC);  
+  fprintf(' Загрузка %i-го прибора::\n   От %f\n   До %f\n', Ji, PpBC);  
 end
 
 function f = CInterval95(xc,Ni)
