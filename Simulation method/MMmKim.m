@@ -22,7 +22,6 @@ PdsBusyNotAll = 0; % Вероятность загрузки одного прибора обслуживания
 QsCount = zeros(1, m+1); % Средние значения нахождения в очереди i заявок
 
 
-
 for Nt = 1 : N % Число повторов моделирования
         %% 
     tcur = 0; % Текущее время работы системы
@@ -49,8 +48,7 @@ for Nt = 1 : N % Число повторов моделирования
     %% Цикл для каждого момента времени treq
     for i = 1 : length(treq)
 
-        while tcur < treq(i)
-             
+        while tcur < treq(i)  
             % Счетчики наличия очереди и занятости приборов обслуживания
             flDstatus = true; % флаг все приборы свободны
             flDstatusBAll = true; % Флаг занятости всех приборов 
@@ -75,12 +73,12 @@ for Nt = 1 : N % Число повторов моделирования
             
             tcurCorrected = Dstatus(1);  % Ближайшее время
             for ds = 1 : length(Dstatus)
-                 if not(Dstatus(ds) == 0) && Dstatus(ds) < tcurCorrected
+                 if Dstatus(ds) ~= 0 && Dstatus(ds) < tcurCorrected
                     tcurCorrected = Dstatus(ds);
                  end
             end 
 
-            if tcurCorrected < treq(i) && not(tcurCorrected == 0)
+            if tcurCorrected < treq(i) && tcurCorrected ~= 0
                 tcur = tcurCorrected;
                 flag = false;
             else
@@ -118,7 +116,7 @@ for Nt = 1 : N % Число повторов моделирования
                 Crejected = Crejected + 1;
                 Queue = Queue - 1;
             else
-                if Queue > 0 && not(busyFlag) % если есть очередь
+                if Queue > 0 && ~busyFlag % если есть очередь
                     for qu = 1 : Queue
                         tserv = -1/M*log(rand);
                         for ds = 1 : length(Dstatus)
